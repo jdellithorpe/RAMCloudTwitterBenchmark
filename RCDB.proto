@@ -1,0 +1,33 @@
+package RCDB.ProtoBuf;
+
+message Key {
+  required uint64 id = 1;
+  
+  enum ColumnType {
+    TWEETS = 1;
+    FOLLOWERS = 2;
+    STREAM = 3;
+    DATA = 4;
+  }    
+
+  required ColumnType column = 2;
+}
+
+message IDTableKey {
+  enum Type {
+    USERID = 1;
+    TWEETID = 2;
+  }
+
+  required Type type = 1;
+}
+
+message IDList {
+  repeated uint64 id = 1;
+}
+
+message Tweet {
+  required string text = 1;
+  required uint64 time = 2;
+  required uint64 user = 3;
+}
