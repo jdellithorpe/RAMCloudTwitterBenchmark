@@ -96,9 +96,9 @@ try {
 
     int64_t srcID, dstID;
     int64_t curSrcID = -1;
-    RCDB::ProtoBuf::IDList userFollowers;
-    RCDB::ProtoBuf::IDList userStream;
-    RCDB::ProtoBuf::IDList userTweets;
+    std::vector<uint64_t> userFollowers;
+    std::vector<uint64_t> userStream;
+    std::vector<uint64_t> userTweets;
     RCDB::ProtoBuf::Tweet tweetData;
     RCDB::ProtoBuf::Key key;
     uint64_t lineCount = 0;
@@ -112,24 +112,23 @@ try {
 
         if (curSrcID == srcID) {
             //LOG(NOTICE, "Adding Follower %lu", dstID);
-            userFollowers.add_id(dstID);
+            userFollowers.push_back(dstID);
         } else {
             // Write USERID:FOLLOWERS for this user.
             key.set_id(curSrcID);
             key.set_column(RCDB::ProtoBuf::Key::FOLLOWERS);
 
             string keyStringBuffer = key.SerializeAsString();
-            string valueStringBuffer = userFollowers.SerializeAsString();
 
             //LOG(NOTICE, "Writing USERID:FOLLOWERS with size %d", (int) (keyStringBuffer.length() + valueStringBuffer.length()));
             client.write(userTableId,
                     keyStringBuffer.c_str(), (uint16_t) keyStringBuffer.length(),
-                    valueStringBuffer.c_str(), (uint32_t) valueStringBuffer.length());
+                    (const void*)userFollowers.data(), (uint32_t)userFollowers.size()*(uint32_t)sizeof(uint64_t));
 
             writeCount++;
 
             keyByteCount += keyStringBuffer.length();
-            valueByteCount += valueStringBuffer.length();
+            valueByteCount += userFollowers.size()*sizeof(uint64_t);
 
             key.Clear();
 
@@ -138,25 +137,24 @@ try {
             key.set_column(RCDB::ProtoBuf::Key::STREAM);
 
             for (uint64_t tweetNumber = 0; tweetNumber < tweetsPerUser; tweetNumber++)
-                for (uint64_t friendNumber = 0; friendNumber < (uint64_t) userFollowers.id_size(); friendNumber++)
-                    userStream.add_id((totalUsers * tweetNumber) + userFollowers.id((int) friendNumber));
+                for (uint64_t friendNumber = 0; friendNumber < (uint64_t) userFollowers.size(); friendNumber++)
+                    userStream.push_back((totalUsers * tweetNumber) + userFollowers[friendNumber]);
 
             keyStringBuffer = key.SerializeAsString();
-            valueStringBuffer = userStream.SerializeAsString();
 
             //LOG(NOTICE, "Writing USERID:STREAM with size %d", (int) (keyStringBuffer.length() + valueStringBuffer.length()));
             client.write(userTableId,
                     keyStringBuffer.c_str(), (uint16_t) keyStringBuffer.length(),
-                    valueStringBuffer.c_str(), (uint32_t) valueStringBuffer.length());
+                    (const void*)userStream.data(), (uint32_t)userStream.size()*(uint32_t)sizeof(uint64_t));
 
             writeCount++;
 
             keyByteCount += keyStringBuffer.length();
-            valueByteCount += valueStringBuffer.length();
+            valueByteCount += userStream.size()*sizeof(uint64_t);
 
             key.Clear();
-            userStream.Clear();
-            userFollowers.Clear();
+            userStream.clear();
+            userFollowers.clear();
 
             // Write TWEETID:DATA for each tweet from this user.
             for (uint64_t i = 0; i < tweetsPerUser; i++) {
@@ -188,27 +186,26 @@ try {
             key.set_column(RCDB::ProtoBuf::Key::TWEETS);
 
             for (uint64_t i = 0; i < tweetsPerUser; i++)
-                userTweets.add_id((totalUsers * i) + curSrcID);
+                userTweets.push_back((totalUsers * i) + curSrcID);
 
             keyStringBuffer = key.SerializeAsString();
-            valueStringBuffer = userTweets.SerializeAsString();
 
             //LOG(NOTICE, "Writing USERID:TWEETS with size %d", (int) (keyStringBuffer.length() + valueStringBuffer.length()));
             client.write(userTableId,
                     keyStringBuffer.c_str(), (uint16_t) keyStringBuffer.length(),
-                    valueStringBuffer.c_str(), (uint32_t) valueStringBuffer.length());
-
+                    (const void*)userTweets.data(), (uint32_t)userTweets.size()*(uint32_t)sizeof(uint64_t));
+            
             writeCount++;
 
             keyByteCount += keyStringBuffer.length();
-            valueByteCount += valueStringBuffer.length();
+            valueByteCount += userTweets.size()*sizeof(uint64_t);
 
             key.Clear();
-            userTweets.Clear();
+            userTweets.clear();
 
             curSrcID = srcID;
 
-            userFollowers.add_id(dstID);
+            userFollowers.push_back(dstID);
         }
 
         lineCount++;
@@ -222,17 +219,16 @@ try {
     key.set_column(RCDB::ProtoBuf::Key::FOLLOWERS);
 
     string keyStringBuffer = key.SerializeAsString();
-    string valueStringBuffer = userFollowers.SerializeAsString();
 
     //LOG(NOTICE, "Writing USERID:FOLLOWERS with size %d", (int) (keyStringBuffer.length() + valueStringBuffer.length()));
     client.write(userTableId,
             keyStringBuffer.c_str(), (uint16_t) keyStringBuffer.length(),
-            valueStringBuffer.c_str(), (uint32_t) valueStringBuffer.length());
+            (const void*)userFollowers.data(), (uint32_t)userFollowers.size()*(uint32_t)sizeof(uint64_t));
 
     writeCount++;
 
     keyByteCount += keyStringBuffer.length();
-    valueByteCount += valueStringBuffer.length();
+    valueByteCount += userFollowers.size()*sizeof(uint64_t);
 
     key.Clear();
 
@@ -241,25 +237,24 @@ try {
     key.set_column(RCDB::ProtoBuf::Key::STREAM);
 
     for (uint64_t tweetNumber = 0; tweetNumber < tweetsPerUser; tweetNumber++)
-        for (uint64_t friendNumber = 0; friendNumber < (uint64_t) userFollowers.id_size(); friendNumber++)
-            userStream.add_id((totalUsers * tweetNumber) + userFollowers.id((int) friendNumber));
+        for (uint64_t friendNumber = 0; friendNumber < (uint64_t) userFollowers.size(); friendNumber++)
+            userStream.push_back((totalUsers * tweetNumber) + userFollowers[friendNumber]);
 
     keyStringBuffer = key.SerializeAsString();
-    valueStringBuffer = userStream.SerializeAsString();
 
     //LOG(NOTICE, "Writing USERID:STREAM with size %d", (int) (keyStringBuffer.length() + valueStringBuffer.length()));
     client.write(userTableId,
             keyStringBuffer.c_str(), (uint16_t) keyStringBuffer.length(),
-            valueStringBuffer.c_str(), (uint32_t) valueStringBuffer.length());
+            (const void*)userStream.data(), (uint32_t)userStream.size()*(uint32_t)sizeof(uint64_t));
 
     writeCount++;
 
     keyByteCount += keyStringBuffer.length();
-    valueByteCount += valueStringBuffer.length();
+    valueByteCount += userStream.size()*sizeof(uint64_t);
 
     key.Clear();
-    userStream.Clear();
-    userFollowers.Clear();
+    userStream.clear();
+    userFollowers.clear();
 
     // Write TWEETID:DATA for each tweet from this user.
     for (uint64_t i = 0; i < tweetsPerUser; i++) {
@@ -291,23 +286,22 @@ try {
     key.set_column(RCDB::ProtoBuf::Key::TWEETS);
 
     for (uint64_t i = 0; i < tweetsPerUser; i++)
-        userTweets.add_id((totalUsers * i) + curSrcID);
+        userTweets.push_back((totalUsers * i) + curSrcID);
 
     keyStringBuffer = key.SerializeAsString();
-    valueStringBuffer = userTweets.SerializeAsString();
 
     //LOG(NOTICE, "Writing USERID:TWEETS with size %d", (int) (keyStringBuffer.length() + valueStringBuffer.length()));
     client.write(userTableId,
             keyStringBuffer.c_str(), (uint16_t) keyStringBuffer.length(),
-            valueStringBuffer.c_str(), (uint32_t) valueStringBuffer.length());
+            (const void*)userTweets.data(), (uint32_t)userTweets.size()*(uint32_t)sizeof(uint64_t));
 
     writeCount++;
 
     keyByteCount += keyStringBuffer.length();
-    valueByteCount += valueStringBuffer.length();
+    valueByteCount += userTweets.size()*sizeof(uint64_t);
 
     key.Clear();
-    userTweets.Clear();
+    userTweets.clear();
 
     // Finally create userID and tweetID generators in idTable.
     RCDB::ProtoBuf::IDTableKey idTableKey;

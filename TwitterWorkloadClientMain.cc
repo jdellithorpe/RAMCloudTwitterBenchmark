@@ -99,9 +99,9 @@ TwitterWorkloadThread(
     latFile << format(LATFILE_HDRFMTSTR, "#USERID", "TXTYPE", "LATENCY(us)");
     
     RCDB::ProtoBuf::Key key;
-    RCDB::ProtoBuf::IDList userStream;
-    RCDB::ProtoBuf::IDList tweetStream;
-    RCDB::ProtoBuf::IDList userFollowers;
+//    RCDB::ProtoBuf::IDList userStream;
+//    RCDB::ProtoBuf::IDList tweetStream;
+//    RCDB::ProtoBuf::IDList userFollowers;
     RCDB::ProtoBuf::Tweet tweetData;
     Buffer buf;
     string keyStringBuffer;
@@ -161,17 +161,18 @@ TwitterWorkloadThread(
             client.read(userTableId, keyStringBuffer.c_str(), (uint16_t) keyStringBuffer.length(), &buf);
             statStTxRdStEnd = Cycles::rdtsc();
             
-            userStream.ParseFromArray(buf.getRange(0, buf.size()), buf.size());
+            uint64_t* userStream = (uint64_t*)buf.getRange(0, buf.size());
+            uint64_t userStreamLen = buf.size()/sizeof(uint64_t);
             
-//            printf("WorkloadThread(s%02lu,t%02lu): Read stream for user %lu (in %luus, size %d):", serverNumber, threadNumber, userID, Cycles::toMicroseconds(readStreamTime), buf.size());
-//            for(uint64_t i = 0; i < (uint64_t)userStream.id_size(); i++) 
-//                printf("%8lu", userStream.id((int)i));
+//            printf("WorkloadThread(s%02lu,t%02lu): Read stream for user %lu (in %luus, size %d):", serverNumber, threadNumber, userID, Cycles::toMicroseconds(statStTxRdStEnd-statStTxRdStStart), buf.size());
+//            for(uint64_t i = 0; i < (uint64_t)userStreamLen; i++) 
+//                printf("%8lu", userStream[i]);
 //            printf("\n");
             
-            uint64_t multiReadSize = std::min((uint64_t)userStream.id_size(), streamTxPgSize);
+            uint64_t multiReadSize = std::min(userStreamLen, streamTxPgSize);
             Tub<ObjectBuffer> values[multiReadSize];
             for(uint64_t i = 0; i < multiReadSize; i++) {
-                key.set_id(userStream.id(userStream.id_size() - 1 - (int)i));
+                key.set_id(userStream[userStreamLen - 1 - i]);
                 key.set_column(RCDB::ProtoBuf::Key::DATA);
                 tweetKeyStrings[i] = key.SerializeAsString();
                 requestObjects[i] =
@@ -185,7 +186,7 @@ TwitterWorkloadThread(
             client.multiRead(requests, (uint32_t)multiReadSize);
             statStTxRdTwEnd = Cycles::rdtsc();
             
-//            printf("WorkloadThread(s%02lu,t%02lu): Performed stream multiread of size %lu for user %lu (in %luus) and read:\n", serverNumber, threadNumber, multiReadSize, userID, Cycles::toMicroseconds(readTweetsTime));
+//            printf("WorkloadThread(s%02lu,t%02lu): Performed stream multiread of size %lu for user %lu (in %luus) and read:\n", serverNumber, threadNumber, multiReadSize, userID, Cycles::toMicroseconds(statStTxRdTwEnd-statStTxRdTwStart));
 //            for(uint64_t i = 0; i < multiReadSize; i++) {
 //                uint32_t dataLen;
 //                const void* data = values[i].get()->getValue(&dataLen);
@@ -194,6 +195,7 @@ TwitterWorkloadThread(
 //                key.ParseFromArray(tweetKeyStrings[i].c_str(), (int)tweetKeyStrings[i].length());
 //                printf("TweetID: %9lu, dataLen: %9d, TweeterID: %9lu, Time: %9lu, Text: %s\n", key.id(), dataLen, tweet.user(), tweet.time(), tweet.text().c_str());
 //            }
+            
             statStTxEnd = Cycles::rdtsc();
             
             statStTxRdStTotal += statStTxRdStEnd - statStTxRdStStart;
@@ -201,6 +203,7 @@ TwitterWorkloadThread(
             statStTxTotal += statStTxEnd - statStTxStart;
             
             statStTxCount++;
+            
 //            printf("Read Stream: %5lu, MultiRead Tweets: %5lu, Total Stream Tx Time: %5lu\n", 
 //                    Cycles::toMicroseconds(statStTxRdStEnd - statStTxRdStStart),
 //                    Cycles::toMicroseconds(statStTxRdTwEnd - statStTxRdTwStart),
@@ -282,9 +285,7 @@ TwitterWorkloadThread(
             
             startTime = Cycles::rdtsc();
             
-            tweetStream.ParseFromArray(buf.getRange(0, buf.size()), buf.size());
-            tweetStream.add_id(nextTweetID);
-            valueStringBuffer = tweetStream.SerializeAsString();
+            buf.appendCopy((const void*)&nextTweetID, sizeof(nextTweetID));
             
             totalTime = Cycles::rdtsc() - startTime;
             
@@ -293,7 +294,7 @@ TwitterWorkloadThread(
             twOpStats[3].startTime = Cycles::rdtsc();
             client.write(userTableId,
                     keyStringBuffer.c_str(), (uint16_t) keyStringBuffer.length(),
-                    valueStringBuffer.c_str(), (uint32_t) valueStringBuffer.length());
+                    buf.getRange(0, buf.size()), buf.size());
             twOpStats[3].endTime = Cycles::rdtsc();
             twOpStats[3].totalTime += timePassed(twOpStats[3]);
             twOpStats[3].totalKeyBytes += (uint64_t) keyStringBuffer.length();
@@ -321,20 +322,22 @@ TwitterWorkloadThread(
             
             startTime = Cycles::rdtsc();
             
-            userFollowers.ParseFromArray(buf.getRange(0, buf.size()), buf.size());
-            uint64_t numFollowers = userFollowers.id_size();
+            uint64_t* userFollowers = (uint64_t*)buf.getRange(0, buf.size());
+            uint64_t numFollowers = buf.size()/sizeof(uint64_t);
+            
             MultiReadObject readRequestObjects[numFollowers];
             MultiReadObject* readRequests[numFollowers];
             MultiWriteObject writeRequestObjects[numFollowers];
             MultiWriteObject* writeRequests[numFollowers];
             RejectRules rejectRules[numFollowers];
             RCDB::ProtoBuf::Key userStreamKeys[numFollowers];
-            RCDB::ProtoBuf::IDList userStreamValues[numFollowers];
+//            RCDB::ProtoBuf::IDList userStreamValues[numFollowers];
             string userStreamKeyStrings[numFollowers];
             string userStreamValueStrings[numFollowers];
             Tub<ObjectBuffer> values[numFollowers];
+            Buffer valueBufs[numFollowers];
             for(uint64_t i = 0; i < numFollowers; i++) {
-                userStreamKeys[i].set_id(userFollowers.id((int) i));
+                userStreamKeys[i].set_id(userFollowers[i]);
                 userStreamKeys[i].set_column(RCDB::ProtoBuf::Key::STREAM);
                 userStreamKeyStrings[i] = userStreamKeys[i].SerializeAsString();
                 readRequestObjects[i] =
@@ -358,54 +361,43 @@ TwitterWorkloadThread(
             startTime = Cycles::rdtsc();
             
             for(uint64_t i = 0; i < numFollowers; i++) {
-                startTime2 = Cycles::rdtsc();
+//                startTime2 = Cycles::rdtsc();
                 
+                // Trigger initialization of internal Tub<Object>
                 uint32_t valueLen;
                 const void* value = values[i].get()->getValue(&valueLen);
                 
-                totalTime2 = Cycles::rdtsc() - startTime2;
-                printf("time6.1: %0.2fus\n", (double)Cycles::toNanoseconds(totalTime2) / 1000.0);
-                
                 twOpStats[5].totalValueBytes += (uint64_t)valueLen;
                 
-                startTime2 = Cycles::rdtsc();
+                // Create Buffer to store ObjectBuffer value and tack on new Tweet ID
+                valueBufs[i].appendExternal(value, valueLen);
+                valueBufs[i].appendCopy((const void*)&nextTweetID, sizeof(nextTweetID));
                 
-                userStreamValues[i].ParseFromArray(value, valueLen);
+//                totalTime2 = Cycles::rdtsc() - startTime2;
+//                printf("time6.1: %0.2fus\n", (double)Cycles::toNanoseconds(totalTime2) / 1000.0);
                 
-                totalTime2 = Cycles::rdtsc() - startTime2;
-                printf("time6.2.1: %0.2fus\n", (double)Cycles::toNanoseconds(totalTime2) / 1000.0);
-                
-                userStreamValues[i].add_id(nextTweetID);
-                
-                startTime2 = Cycles::rdtsc();
-                
-                userStreamValueStrings[i] = userStreamValues[i].SerializeAsString();
-                
-                totalTime2 = Cycles::rdtsc() - startTime2;
-                printf("time6.2.2: %0.2fus\n", (double)Cycles::toNanoseconds(totalTime2) / 1000.0);
-                
-                startTime2 = Cycles::rdtsc();
+//                startTime2 = Cycles::rdtsc();
                 
                 memset(&rejectRules[i], 0, sizeof(RejectRules));
                 rejectRules[i].givenVersion = values[i].get()->object.get()->getVersion();
                 rejectRules[i].versionLeGiven = 1;
                 
-                totalTime2 = Cycles::rdtsc() - startTime2;
-                printf("time6.3: %0.2fus\n", (double)Cycles::toNanoseconds(totalTime2) / 1000.0);
+//                totalTime2 = Cycles::rdtsc() - startTime2;
+//                printf("time6.3: %0.2fus\n", (double)Cycles::toNanoseconds(totalTime2) / 1000.0);
                 
-                startTime2 = Cycles::rdtsc();
+//                startTime2 = Cycles::rdtsc();
                 
                 writeRequestObjects[i] = 
                         MultiWriteObject(userTableId,
                         userStreamKeyStrings[i].c_str(), (uint16_t) userStreamKeyStrings[i].length(),
-                        userStreamValueStrings[i].c_str(), (uint16_t) userStreamValueStrings[i].length(),
+                        valueBufs[i].getRange(0, valueBufs[i].size()), valueBufs[i].size(),
                         &rejectRules[i]);
                 writeRequests[i] = &writeRequestObjects[i];
                 twOpStats[6].totalKeyBytes += (uint64_t) userStreamKeyStrings[i].length();
                 twOpStats[6].totalValueBytes += (uint64_t) userStreamValueStrings[i].length();
                 
-                totalTime2 = Cycles::rdtsc() - startTime2;
-                printf("time6.4: %0.2fus\n", (double)Cycles::toNanoseconds(totalTime2) / 1000.0);
+//                totalTime2 = Cycles::rdtsc() - startTime2;
+//                printf("time6.4: %0.2fus\n", (double)Cycles::toNanoseconds(totalTime2) / 1000.0);
             }
             
             totalTime = Cycles::rdtsc() - startTime;
@@ -429,8 +421,6 @@ TwitterWorkloadThread(
             statTwTxCount++;
             
             latFile << format(LATFILE_ENTFMTSTR, userID, "TW", (double)Cycles::toNanoseconds(statTwTxEnd - statTwTxStart)/1000.0);
-            
-            
         }
     }
     statLoopTimeEnd = Cycles::rdtsc();

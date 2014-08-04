@@ -1,5 +1,6 @@
 import ramcloud
 import RCDB_pb2 as pb
+import array
 
 class GraphScope:
   c = ramcloud.RAMCloud();
@@ -20,10 +21,7 @@ class GraphScope:
     
     readBuf = self.c.read(self.userTableID, key.SerializeToString())
 
-    tweetList = pb.IDList()
-    tweetList.ParseFromString(readBuf[0])
-
-    print tweetList.__str__()
+    print array.array('L', readBuf[0])
 
   def printUserFollowerIDs(self, userID):
     key = pb.Key()
@@ -32,10 +30,7 @@ class GraphScope:
     
     readBuf = self.c.read(self.userTableID, key.SerializeToString())
 
-    followerList = pb.IDList()
-    followerList.ParseFromString(readBuf[0])
-
-    print followerList.__str__()
+    print array.array('L', readBuf[0])
 
   def printUserStreamIDs(self, userID):
     key = pb.Key()
@@ -44,10 +39,7 @@ class GraphScope:
     
     readBuf = self.c.read(self.userTableID, key.SerializeToString())
 
-    tweetList = pb.IDList()
-    tweetList.ParseFromString(readBuf[0])
-
-    print tweetList.__str__()
+    print array.array('L', readBuf[0])
 
   def printUserStream(self, userID, pgSize):
     key = pb.Key()
@@ -56,11 +48,10 @@ class GraphScope:
     
     readBuf = self.c.read(self.userTableID, key.SerializeToString())
 
-    tweetList = pb.IDList()
-    tweetList.ParseFromString(readBuf[0])
+    tweetList = array.array('L', readBuf[0])
 
     for i in range(0,pgSize):
-      tweetID = tweetList.id[len(tweetList.id) - 1 - i]
+      tweetID = tweetList[len(tweetList) - 1 - i]
       print str(i+1) + ": "
       print "tweetID: " + str(tweetID)
       self.printTweet(tweetID)
