@@ -428,7 +428,7 @@ TwitterWorkloadThread(
                         &rejectRules[i]);
                 writeRequests[i] = &writeRequestObjects[i];
                 twOpStats[6].totalKeyBytes += (uint64_t) userStreamKeyStrings[i].length();
-                twOpStats[6].totalValueBytes += (uint64_t) userStreamValueStrings[i].length();
+                twOpStats[6].totalValueBytes += (uint64_t) valueBufs[i].size();
                 
 //                totalTime2 = Cycles::rdtsc() - startTime2;
 //                printf("time6.4: %0.2fus\n", (double)Cycles::toNanoseconds(totalTime2) / 1000.0);
