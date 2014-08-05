@@ -334,7 +334,7 @@ TwitterWorkloadThread(
             twOpStats[3].endTime = Cycles::rdtsc();
             twOpStats[3].totalTime += timePassed(twOpStats[3]);
             twOpStats[3].totalKeyBytes += (uint64_t) keyStringBuffer.length();
-            twOpStats[3].totalValueBytes += (uint64_t) valueStringBuffer.length();
+            twOpStats[3].totalValueBytes += (uint64_t) buf.size();
             twOpStats[3].opCount++;
             
             // Update the user's followers
