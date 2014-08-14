@@ -42,6 +42,9 @@ main(int argc, char *argv[])
 try {
     GOOGLE_PROTOBUF_VERIFY_VERSION;
 
+    uint64_t clientIndex;
+    uint64_t numClients;
+    
     uint64_t totalUsers;
     uint64_t tweetsPerUser;
     string edgeListFileName;
@@ -58,6 +61,17 @@ try {
 
     OptionsDescription clientOptions("TwitterGraphBatchLoader");
     clientOptions.add_options()
+            // These first two arguments are currently ignored. They are here
+            // so that this client can be run with cluster.py
+            ("clientIndex",
+            ProgramOptions::value<uint64_t>(&clientIndex)->
+                default_value(0),
+            "Index of this client (first client is 0; currently ignored)")
+            ("numClients",
+            ProgramOptions::value<uint64_t>(&numClients)->
+                default_value(1),
+            "Total number of clients running (currently ignored)")
+    
             ("totalUsers",
             ProgramOptions::value<uint64_t>(&totalUsers),
             "Total number of users.")

@@ -488,9 +488,8 @@ main(int argc, char *argv[])
 try {
     GOOGLE_PROTOBUF_VERIFY_VERSION;
 
-    uint64_t serverNumber;
-    uint64_t baseServerNumber;
-    uint64_t numServers;
+    uint64_t clientIndex;
+    uint64_t numClients;
     uint64_t numThreads;
     double runTime;
     double streamProb;
@@ -508,44 +507,48 @@ try {
 
     OptionsDescription clientOptions("TwitterWorkloadClient");
     clientOptions.add_options()
-            ("serverNumber",
-            ProgramOptions::value<uint64_t>(&serverNumber),
-            "The number of this server.")
-            ("baseServerNumber",
-            ProgramOptions::value<uint64_t>(&baseServerNumber),
-            "Total number of users.")
-            ("numServers",
-            ProgramOptions::value<uint64_t>(&numServers),
-            "Total number of servers.")
+            ("clientIndex",
+            ProgramOptions::value<uint64_t>(&clientIndex)->
+                default_value(0),
+            "Index of this client (first client is 0; default 0)")
+            ("numClients",
+            ProgramOptions::value<uint64_t>(&numClients)->
+                default_value(1),
+            "Total number of client servers running (default 1)")    
             ("numThreads",
-            ProgramOptions::value<uint64_t>(&numThreads),
-            "Total number of threads (threads are smeared evenly across servers).")
+            ProgramOptions::value<uint64_t>(&numThreads)->
+                default_value(1),
+            "Total number of threads spread over clients (default 1).")
             ("runTime",
-            ProgramOptions::value<double>(&runTime),
-            "Total time to run (minutes).")
+            ProgramOptions::value<double>(&runTime)->
+                default_value(0.1),
+            "Total time to run (minutes; default 0.1).")
             ("streamProb",
-            ProgramOptions::value<double>(&streamProb),
-            "Probability of performing a stream operation.")
+            ProgramOptions::value<double>(&streamProb)->
+                default_value(0.9),
+            "Probability of performing a stream operation (default 0.9).")
             ("totUsers",
             ProgramOptions::value<uint64_t>(&totUsers),
-            "Total number of users.")
+            "Total number of users (required).")
             ("streamTxPgSize",
-            ProgramOptions::value<uint64_t>(&streamTxPgSize),
-            "Number of tweets to fetch in a stream operation.")
+            ProgramOptions::value<uint64_t>(&streamTxPgSize)->
+                default_value(8),
+            "Number of tweets to fetch in a stream operation (default 8).")
             ("workingSetSize",
-            ProgramOptions::value<uint64_t>(&workingSetSize),
-            "Number of users over which to apply workload (0 for all users).")
+            ProgramOptions::value<uint64_t>(&workingSetSize)->
+                default_value(0),
+            "Number of users over which to apply workload (0 for all users; default 0).")
             ("outputDir",
-            ProgramOptions::value<string>(&outputDir),
-            "Output directory for measurement files.");
+            ProgramOptions::value<string>(&outputDir)->
+                default_value("./"),
+            "Output directory for measurement files (default \"./\".");
 
 
     OptionParser optionParser(clientOptions, argc, argv);
 
     LOG(NOTICE, "TwitterWorkloadClient: \n"
-            "serverNumber: %lu\n"
-            "baseServerNumber: %lu\n"
-            "numServers: %lu\n"
+            "clientIndex: %lu\n"
+            "numClients: %lu\n"
             "numThreads: %lu\n"
             "runTime: %0.2f\n"
             "streamProb: %0.2f\n"
@@ -553,9 +556,8 @@ try {
             "streamTxPgSize: %lu\n"
             "workingSetSize: %lu\n"
             "outputDir: %s\n",
-            serverNumber,
-            baseServerNumber,
-            numServers,
+            clientIndex,
+            numClients,
             numThreads,
             runTime,
             streamProb,
@@ -564,15 +566,15 @@ try {
             workingSetSize,
             outputDir.c_str());
 
-    uint64_t numLocalThreads = numThreads / numServers;
-    numLocalThreads += ((numThreads % numServers) > (serverNumber - baseServerNumber)) ? 1 : 0;
+    uint64_t numLocalThreads = numThreads / numClients;
+    numLocalThreads += ((numThreads % numClients) > clientIndex) ? 1 : 0;
 
     LOG(NOTICE, "Launching workload threads...");
 
     Tub<std::thread> threads[numLocalThreads];
 
     for (uint64_t i = 0; i < numLocalThreads; i++)
-        threads[i].construct(TwitterWorkloadThread, optionParser, serverNumber, i, runTime, streamProb, totUsers, streamTxPgSize, workingSetSize, outputDir);
+        threads[i].construct(TwitterWorkloadThread, optionParser, clientIndex, i, runTime, streamProb, totUsers, streamTxPgSize, workingSetSize, outputDir);
 
     for (uint64_t i = 0; i < numLocalThreads; i++)
         threads[i].get()->join();
