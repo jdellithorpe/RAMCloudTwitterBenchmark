@@ -271,7 +271,7 @@ TwitterWorkloadThread(
 //            printf("time0: %0.2fus\n", (double)Cycles::toNanoseconds(totalTime) / 1000.0);
             
             twOpStats[0].startTime = Cycles::rdtsc();
-            uint64_t nextTweetID = client.increment(idTableId, keyStringBuffer.c_str(), (uint16_t)keyStringBuffer.length(), 1);
+            uint64_t nextTweetID = client.incrementInt64(idTableId, keyStringBuffer.c_str(), (uint16_t)keyStringBuffer.length(), 1);
             twOpStats[0].endTime = Cycles::rdtsc();
             twOpStats[0].totalTime += timePassed(twOpStats[0]);
             twOpStats[0].opCount++;
