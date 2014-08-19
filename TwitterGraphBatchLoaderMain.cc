@@ -51,6 +51,8 @@ try {
 
     uint64_t STARTING_TWEET_TIME = 1230800000;
     uint64_t TWEETS_PER_SECOND = 1000;
+    
+    uint32_t SERVER_SPAN = 3;
 
     // Set line buffering for stdout so that printf's and log messages
     // interleave properly.
@@ -98,9 +100,9 @@ try {
             optionParser.options.getCoordinatorLocator().c_str(),
             optionParser.options.getClusterName().c_str());
 
-    uint64_t userTableId = client.createTable("UserTable");
-    uint64_t tweetTableId = client.createTable("TweetTable");
-    uint64_t idTableId = client.createTable("IDTable");
+    uint64_t userTableId = client.createTable("UserTable", SERVER_SPAN);
+    uint64_t tweetTableId = client.createTable("TweetTable", SERVER_SPAN);
+    uint64_t idTableId = client.createTable("IDTable", SERVER_SPAN);
 
     LOG(NOTICE, "created/found userTable (id %lu), tweetTable (id %lu), and IDTable (id %lu)\n", userTableId, tweetTableId, idTableId);
 
