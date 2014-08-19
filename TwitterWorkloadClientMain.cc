@@ -93,10 +93,13 @@ TwitterWorkloadThread(
     LOG(NOTICE, "WorkloadThread(s%02lu,t%02lu): Found userTable (id %lu) and tweetTable (id %lu)...", serverNumber, threadNumber, userTableId, tweetTableId);
     
     string latFileName = format("%ss%02lu_t%02lu.lat", outputDir.c_str(), serverNumber, threadNumber);
-    LOG(NOTICE, "WorkloadThread(s%02lu,t%02lu): Recording measurements in file %s", serverNumber, threadNumber, latFileName.c_str());
-    std::ofstream latFile(latFileName.c_str());
-
-    latFile << format(LATFILE_HDRFMTSTR, "#USERID", "TXTYPE", "LATENCY(us)");
+    
+    std::ofstream latFile;
+    if(serverNumber == 0 && threadNumber == 0) {
+        LOG(NOTICE, "WorkloadThread(s%02lu,t%02lu): Recording measurements in file %s", serverNumber, threadNumber, latFileName.c_str());
+        latFile.open(latFileName.c_str());
+        latFile << format(LATFILE_HDRFMTSTR, "#USERID", "TXTYPE", "LATENCY(us)");
+    }
     
     RCDB::ProtoBuf::Key key;
 //    RCDB::ProtoBuf::IDList userStream;
@@ -249,7 +252,9 @@ TwitterWorkloadThread(
 //                    Cycles::toMicroseconds(statStTxRdTwEnd - statStTxRdTwStart),
 //                    Cycles::toMicroseconds(statStTxEnd - statStTxStart));
             
-            latFile << format(LATFILE_ENTFMTSTR, userID, "ST", (double)Cycles::toNanoseconds(statStTxEnd - statStTxStart)/1000.0);
+            if(serverNumber == 0 && threadNumber == 0)
+                latFile << format(LATFILE_ENTFMTSTR, userID, "ST", (double)Cycles::toNanoseconds(statStTxEnd - statStTxStart)/1000.0);
+            
         } else {
             uint64_t userID;
             if (workingSetSize == 0) {
@@ -453,14 +458,16 @@ TwitterWorkloadThread(
             
             statTwTxCount++;
             
-            latFile << format(LATFILE_ENTFMTSTR, userID, "TW", (double)Cycles::toNanoseconds(statTwTxEnd - statTwTxStart)/1000.0);
+            if(serverNumber == 0 && threadNumber == 0)
+                latFile << format(LATFILE_ENTFMTSTR, userID, "TW", (double)Cycles::toNanoseconds(statTwTxEnd - statTwTxStart)/1000.0);
         }
     }
     statLoopTimeEnd = Cycles::rdtsc();
     
     statLoopTimeTotal = statLoopTimeEnd - statLoopTimeStart;
 
-    latFile.close();
+    if(serverNumber == 0 && threadNumber == 0)
+        latFile.close();
 
     string datFileName = format("%ss%02lu_t%02lu.dat", outputDir.c_str(), serverNumber, threadNumber);
     LOG(NOTICE, "WorkloadThread(s%02lu,t%02lu): Recording summary information in file %s", serverNumber, threadNumber, datFileName.c_str());
