@@ -479,33 +479,33 @@ TwitterWorkloadThread(
     datFile << format("%-35s:%lu\n", "STREAM TRANSACTIONS", statStTxCount);
     if(statStTxCount > 0) {
         datFile << format("%-35s:%0.2fus\n", "AVERAGE STREAM TX TIME", (double)Cycles::toNanoseconds(statStTxTotal) / (double)statStTxCount / 1000.0);
-        datFile << format("%-35s:%0.2fus (Key: %0.2fB, Value: %0.2fB)\n", "AVERAGE READ USERID:STREAM", (double)Cycles::toNanoseconds(stOpStats[0].totalTime) / (double)stOpStats[0].opCount / 1000.0, (double)stOpStats[0].totalKeyBytes / (double)stOpStats[0].opCount, (double)stOpStats[0].totalValueBytes / (double)stOpStats[0].opCount);
-        datFile << format("%-35s:%0.2fus (Key: %0.2fB, Value: %0.2fB, MOpSize: %0.2f)\n", "AVERAGE MULTIREAD TWEET:DATA", (double)Cycles::toNanoseconds(stOpStats[1].totalTime) / (double)stOpStats[1].opCount / 1000.0, (double)stOpStats[1].totalKeyBytes / (double)stOpStats[1].totalMultiOpSize, (double)stOpStats[1].totalValueBytes / (double)stOpStats[1].totalMultiOpSize, (double)stOpStats[1].totalMultiOpSize / (double)stOpStats[1].opCount);
+        datFile << format("%-35s:%0.2fus (Key: %0.2fB, Value: %0.2fB)\n", "AVERAGE READ USERID STREAM", (double)Cycles::toNanoseconds(stOpStats[0].totalTime) / (double)stOpStats[0].opCount / 1000.0, (double)stOpStats[0].totalKeyBytes / (double)stOpStats[0].opCount, (double)stOpStats[0].totalValueBytes / (double)stOpStats[0].opCount);
+        datFile << format("%-35s:%0.2fus (Key: %0.2fB, Value: %0.2fB, MOpSize: %0.2f)\n", "AVERAGE MULTIREAD TWEET DATA", (double)Cycles::toNanoseconds(stOpStats[1].totalTime) / (double)stOpStats[1].opCount / 1000.0, (double)stOpStats[1].totalKeyBytes / (double)stOpStats[1].totalMultiOpSize, (double)stOpStats[1].totalValueBytes / (double)stOpStats[1].totalMultiOpSize, (double)stOpStats[1].totalMultiOpSize / (double)stOpStats[1].opCount);
     } else {
         datFile << format("%-35s:%0.2fus\n", "AVERAGE STREAM TX TIME", 0.0);
-        datFile << format("%-35s:%0.2fus (Key: %0.2fB, Value: %0.2fB)\n", "AVERAGE READ USERID:STREAM", 0.0, 0.0, 0.0);
-        datFile << format("%-35s:%0.2fus (Key: %0.2fB, Value: %0.2fB, MOpSize: %0.2f)\n", "AVERAGE MULTIREAD TWEET:DATA", 0.0, 0.0, 0.0, 0.0);
+        datFile << format("%-35s:%0.2fus (Key: %0.2fB, Value: %0.2fB)\n", "AVERAGE READ USERID STREAM", 0.0, 0.0, 0.0);
+        datFile << format("%-35s:%0.2fus (Key: %0.2fB, Value: %0.2fB, MOpSize: %0.2f)\n", "AVERAGE MULTIREAD TWEET DATA", 0.0, 0.0, 0.0, 0.0);
     }
     
     datFile << format("%-35s:%lu\n", "TWEET TRANSACTIONS", statTwTxCount);
     if(statTwTxCount > 0) {
         datFile << format("%-35s:%0.2fus\n", "AVERAGE TWEET TX TIME", (double)Cycles::toNanoseconds(statTwTxTotal) / (double)statTwTxCount / 1000.0);
         datFile << format("%-35s:%0.2fus\n", "AVERAGE INCREMENT TWEETID", (double)Cycles::toNanoseconds(twOpStats[0].totalTime) / (double)twOpStats[0].opCount / 1000.0);
-        datFile << format("%-35s:%0.2fus (Key: %0.2fB, Value: %0.2fB)\n", "AVERAGE WRITE TWEETID:DATA", (double)Cycles::toNanoseconds(twOpStats[1].totalTime) / (double)twOpStats[1].opCount / 1000.0, (double)twOpStats[1].totalKeyBytes / (double)twOpStats[1].opCount, (double)twOpStats[1].totalValueBytes / (double)twOpStats[1].opCount);
-        datFile << format("%-35s:%0.2fus (Key: %0.2fB, Value: %0.2fB)\n", "AVERAGE READ USERID:TWEETS", (double)Cycles::toNanoseconds(twOpStats[2].totalTime) / (double)twOpStats[2].opCount / 1000.0, (double)twOpStats[2].totalKeyBytes / (double)twOpStats[2].opCount, (double)twOpStats[2].totalValueBytes / (double)twOpStats[2].opCount);
-        datFile << format("%-35s:%0.2fus (Key: %0.2fB, Value: %0.2fB)\n", "AVERAGE WRITE USERID:TWEETS", (double)Cycles::toNanoseconds(twOpStats[3].totalTime) / (double)twOpStats[3].opCount / 1000.0, (double)twOpStats[3].totalKeyBytes / (double)twOpStats[3].opCount, (double)twOpStats[3].totalValueBytes / (double)twOpStats[3].opCount);
-        datFile << format("%-35s:%0.2fus (Key: %0.2fB, Value: %0.2fB)\n", "AVERAGE READ USERID:FOLLOWERS", (double)Cycles::toNanoseconds(twOpStats[4].totalTime) / (double)twOpStats[4].opCount / 1000.0, (double)twOpStats[4].totalKeyBytes / (double)twOpStats[4].opCount, (double)twOpStats[4].totalValueBytes / (double)twOpStats[4].opCount);
-        datFile << format("%-35s:%0.2fus (Key: %0.2fB, Value: %0.2fB, MOpSize: %0.2f)\n", "AVERAGE MULTIREAD USERID:STREAM", (double)Cycles::toNanoseconds(twOpStats[5].totalTime) / (double)twOpStats[5].opCount / 1000.0, (double)twOpStats[5].totalKeyBytes / (double)twOpStats[5].totalMultiOpSize, (double)twOpStats[5].totalValueBytes / (double)twOpStats[5].totalMultiOpSize, (double)twOpStats[5].totalMultiOpSize / (double)twOpStats[5].opCount);
-        datFile << format("%-35s:%0.2fus (Key: %0.2fB, Value: %0.2fB, MOpSize: %0.2f, RejectCount: %lu)\n", "AVERAGE MULTIWRITE USERID:STREAM", (double)Cycles::toNanoseconds(twOpStats[6].totalTime) / (double)twOpStats[6].opCount / 1000.0, (double)twOpStats[6].totalKeyBytes / (double)twOpStats[6].totalMultiOpSize, (double)twOpStats[6].totalValueBytes / (double)twOpStats[6].totalMultiOpSize, (double)twOpStats[6].totalMultiOpSize / (double)twOpStats[6].opCount, twOpStats[6].rejectCount);
+        datFile << format("%-35s:%0.2fus (Key: %0.2fB, Value: %0.2fB)\n", "AVERAGE WRITE TWEETID DATA", (double)Cycles::toNanoseconds(twOpStats[1].totalTime) / (double)twOpStats[1].opCount / 1000.0, (double)twOpStats[1].totalKeyBytes / (double)twOpStats[1].opCount, (double)twOpStats[1].totalValueBytes / (double)twOpStats[1].opCount);
+        datFile << format("%-35s:%0.2fus (Key: %0.2fB, Value: %0.2fB)\n", "AVERAGE READ USERID TWEETS", (double)Cycles::toNanoseconds(twOpStats[2].totalTime) / (double)twOpStats[2].opCount / 1000.0, (double)twOpStats[2].totalKeyBytes / (double)twOpStats[2].opCount, (double)twOpStats[2].totalValueBytes / (double)twOpStats[2].opCount);
+        datFile << format("%-35s:%0.2fus (Key: %0.2fB, Value: %0.2fB)\n", "AVERAGE WRITE USERID TWEETS", (double)Cycles::toNanoseconds(twOpStats[3].totalTime) / (double)twOpStats[3].opCount / 1000.0, (double)twOpStats[3].totalKeyBytes / (double)twOpStats[3].opCount, (double)twOpStats[3].totalValueBytes / (double)twOpStats[3].opCount);
+        datFile << format("%-35s:%0.2fus (Key: %0.2fB, Value: %0.2fB)\n", "AVERAGE READ USERID FOLLOWERS", (double)Cycles::toNanoseconds(twOpStats[4].totalTime) / (double)twOpStats[4].opCount / 1000.0, (double)twOpStats[4].totalKeyBytes / (double)twOpStats[4].opCount, (double)twOpStats[4].totalValueBytes / (double)twOpStats[4].opCount);
+        datFile << format("%-35s:%0.2fus (Key: %0.2fB, Value: %0.2fB, MOpSize: %0.2f)\n", "AVERAGE MULTIREAD USERID STREAM", (double)Cycles::toNanoseconds(twOpStats[5].totalTime) / (double)twOpStats[5].opCount / 1000.0, (double)twOpStats[5].totalKeyBytes / (double)twOpStats[5].totalMultiOpSize, (double)twOpStats[5].totalValueBytes / (double)twOpStats[5].totalMultiOpSize, (double)twOpStats[5].totalMultiOpSize / (double)twOpStats[5].opCount);
+        datFile << format("%-35s:%0.2fus (Key: %0.2fB, Value: %0.2fB, MOpSize: %0.2f, RejectCount: %lu)\n", "AVERAGE MULTIWRITE USERID STREAM", (double)Cycles::toNanoseconds(twOpStats[6].totalTime) / (double)twOpStats[6].opCount / 1000.0, (double)twOpStats[6].totalKeyBytes / (double)twOpStats[6].totalMultiOpSize, (double)twOpStats[6].totalValueBytes / (double)twOpStats[6].totalMultiOpSize, (double)twOpStats[6].totalMultiOpSize / (double)twOpStats[6].opCount, twOpStats[6].rejectCount);
     } else {
         datFile << format("%-35s:%0.2fus\n", "AVERAGE TWEET TX TIME", 0.0);
         datFile << format("%-35s:%0.2fus\n", "AVERAGE INCREMENT TWEETID", 0.0);
-        datFile << format("%-35s:%0.2fus (Key: %0.2fB, Value: %0.2fB)\n", "AVERAGE WRITE TWEETID:DATA", 0.0, 0.0, 0.0);
-        datFile << format("%-35s:%0.2fus (Key: %0.2fB, Value: %0.2fB)\n", "AVERAGE READ USERID:TWEETS", 0.0, 0.0, 0.0);
-        datFile << format("%-35s:%0.2fus (Key: %0.2fB, Value: %0.2fB)\n", "AVERAGE WRITE USERID:TWEETS", 0.0, 0.0, 0.0);
-        datFile << format("%-35s:%0.2fus (Key: %0.2fB, Value: %0.2fB)\n", "AVERAGE READ USERID:FOLLOWERS", 0.0, 0.0, 0.0);
-        datFile << format("%-35s:%0.2fus (Key: %0.2fB, Value: %0.2fB, MOpSize: %0.2f)\n", "AVERAGE MULTIREAD USERID:STREAM", 0.0, 0.0, 0.0, 0.0);
-        datFile << format("%-35s:%0.2fus (Key: %0.2fB, Value: %0.2fB, MOpSize: %0.2f, RejectCount: %lu)\n", "AVERAGE MULTIWRITE USERID:STREAM", 0.0, 0.0, 0.0, 0.0, (uint64_t)0);
+        datFile << format("%-35s:%0.2fus (Key: %0.2fB, Value: %0.2fB)\n", "AVERAGE WRITE TWEETID DATA", 0.0, 0.0, 0.0);
+        datFile << format("%-35s:%0.2fus (Key: %0.2fB, Value: %0.2fB)\n", "AVERAGE READ USERID TWEETS", 0.0, 0.0, 0.0);
+        datFile << format("%-35s:%0.2fus (Key: %0.2fB, Value: %0.2fB)\n", "AVERAGE WRITE USERID TWEETS", 0.0, 0.0, 0.0);
+        datFile << format("%-35s:%0.2fus (Key: %0.2fB, Value: %0.2fB)\n", "AVERAGE READ USERID FOLLOWERS", 0.0, 0.0, 0.0);
+        datFile << format("%-35s:%0.2fus (Key: %0.2fB, Value: %0.2fB, MOpSize: %0.2f)\n", "AVERAGE MULTIREAD USERID STREAM", 0.0, 0.0, 0.0, 0.0);
+        datFile << format("%-35s:%0.2fus (Key: %0.2fB, Value: %0.2fB, MOpSize: %0.2f, RejectCount: %lu)\n", "AVERAGE MULTIWRITE USERID STREAM", 0.0, 0.0, 0.0, 0.0, (uint64_t)0);
     }
 }
 
