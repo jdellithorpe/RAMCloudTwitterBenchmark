@@ -72,6 +72,7 @@ TwitterWorkloadThread(
         uint64_t totUsers,
         uint64_t streamTxPgSize,
         uint64_t workingSetSize,
+        bool enableLatLogging,
         string outputDir) {
     LOG(NOTICE, "WorkloadThread(s%02lu,t%02lu): Starting...", serverNumber, threadNumber);
 
@@ -95,7 +96,7 @@ TwitterWorkloadThread(
     string latFileName = format("%ss%02lu_t%02lu.lat", outputDir.c_str(), serverNumber, threadNumber);
     
     std::ofstream latFile;
-    if(serverNumber == 0 && threadNumber == 0) {
+    if(serverNumber == 0 && threadNumber == 0 && enableLatLogging) {
         LOG(NOTICE, "WorkloadThread(s%02lu,t%02lu): Recording measurements in file %s", serverNumber, threadNumber, latFileName.c_str());
         latFile.open(latFileName.c_str());
         latFile << format(LATFILE_HDRFMTSTR, "#USERID", "TXTYPE", "LATENCY(us)");
@@ -252,7 +253,7 @@ TwitterWorkloadThread(
 //                    Cycles::toMicroseconds(statStTxRdTwEnd - statStTxRdTwStart),
 //                    Cycles::toMicroseconds(statStTxEnd - statStTxStart));
             
-            if(serverNumber == 0 && threadNumber == 0)
+            if(serverNumber == 0 && threadNumber == 0 && enableLatLogging)
                 latFile << format(LATFILE_ENTFMTSTR, userID, "ST", (double)Cycles::toNanoseconds(statStTxEnd - statStTxStart)/1000.0);
             
         } else {
@@ -458,7 +459,7 @@ TwitterWorkloadThread(
             
             statTwTxCount++;
             
-            if(serverNumber == 0 && threadNumber == 0)
+            if(serverNumber == 0 && threadNumber == 0 && enableLatLogging)
                 latFile << format(LATFILE_ENTFMTSTR, userID, "TW", (double)Cycles::toNanoseconds(statTwTxEnd - statTwTxStart)/1000.0);
         }
     }
@@ -466,7 +467,7 @@ TwitterWorkloadThread(
     
     statLoopTimeTotal = statLoopTimeEnd - statLoopTimeStart;
 
-    if(serverNumber == 0 && threadNumber == 0)
+    if(serverNumber == 0 && threadNumber == 0 && enableLatLogging)
         latFile.close();
 
     string datFileName = format("%ss%02lu_t%02lu.dat", outputDir.c_str(), serverNumber, threadNumber);
@@ -522,6 +523,7 @@ try {
     uint64_t totUsers;
     uint64_t streamTxPgSize;
     uint64_t workingSetSize;
+    bool enableLatLogging;
     string outputDir;
 
     // Set line buffering for stdout so that printf's and log messages
@@ -564,6 +566,10 @@ try {
             ProgramOptions::value<uint64_t>(&workingSetSize)->
                 default_value(0),
             "Number of users over which to apply workload (0 for all users; default 0).")
+            ("enableLatLogging",
+            ProgramOptions::value<bool>(&enableLatLogging)->
+                default_value(false),
+            "Enable outputting of each individual latency measurement (default false).")
             ("outputDir",
             ProgramOptions::value<string>(&outputDir)->
                 default_value("./"),
@@ -581,6 +587,7 @@ try {
             "totUsers: %lu\n"
             "streamTxPgSize: %lu\n"
             "workingSetSize: %lu\n"
+            "enableLatLogging: %d\n"
             "outputDir: %s\n",
             clientIndex,
             numClients,
@@ -590,6 +597,7 @@ try {
             totUsers,
             streamTxPgSize,
             workingSetSize,
+            enableLatLogging,
             outputDir.c_str());
 
     uint64_t numLocalThreads = numThreads / numClients;
@@ -600,7 +608,7 @@ try {
     Tub<std::thread> threads[numLocalThreads];
 
     for (uint64_t i = 0; i < numLocalThreads; i++)
-        threads[i].construct(TwitterWorkloadThread, optionParser, clientIndex, i, runTime, streamProb, totUsers, streamTxPgSize, workingSetSize, outputDir);
+        threads[i].construct(TwitterWorkloadThread, optionParser, clientIndex, i, runTime, streamProb, totUsers, streamTxPgSize, workingSetSize, enableLatLogging, outputDir);
 
     for (uint64_t i = 0; i < numLocalThreads; i++)
         threads[i].get()->join();
