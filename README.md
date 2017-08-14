@@ -1,5 +1,5 @@
-toothless
-=========
+RAMCloudTwitterBenchmark
+========================
 
 RAMCloud based twitter benchmark
 
